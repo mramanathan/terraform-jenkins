@@ -1,0 +1,20 @@
+---
+- name: Workers exit the Swarm cluster
+  hosts: workers
+  gather_facts: False
+  become: true
+  become_method: sudo
+  become_flags: -E
+  remote_user: ubuntu
+  roles:
+    - docker_swarm_leave
+
+- name: Managers exit the Swarm cluster
+  hosts: managers
+  gather_facts: False
+  become: true
+  become_method: sudo
+  become_flags: -E
+  remote_user: ubuntu
+  roles:
+    - docker_swarm_leave

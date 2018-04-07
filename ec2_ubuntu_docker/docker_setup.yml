@@ -1,0 +1,9 @@
+---
+  - name: Install Docker CE on all nodes
+    hosts: docker-nodes
+    become: true
+    become_method: sudo
+    become_flags: -E
+    remote_user: ubuntu
+    roles:
+      - install_docker

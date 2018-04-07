@@ -1,6 +1,10 @@
 # Compiled files
+*.plan
 *.tfstate
 *.tfstate.backup
 
 # Module directory
 .terraform/
+
+# Editor residue
+*.swp
