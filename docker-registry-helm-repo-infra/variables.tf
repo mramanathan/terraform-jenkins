@@ -5,7 +5,6 @@ variable "region" {
 
 variable "public_security_group" {
     description = "Production Security Group"
-    default     = "sg-0b33af29e71c46854"
 }
 
 variable "instance_type" {
@@ -13,14 +12,14 @@ variable "instance_type" {
 }
 
 variable "ec2_keypair_name" {
-  default = "cloud-deploy"
+  description = "Key pair to access EC2 instance"
 }
 
 variable "public_subnet_id" {
-  default = "subnet-00c9c231a8699a1cd"
+  description = "EC2 instance will be in this subnet"
 }
 
 
 variable "ec2_iam_instance_profile" {
-  default = "EC2-iam-instance-profile"
+  description = "Enable EC2 instance to assume IAM role"
 }
