@@ -11,3 +11,7 @@ variable "vpc_cidr" {
 variable "public_subnet_1_cidr" {
     description = "Public Subnet 1 CIDR"  
 }
+
+variable "public_security_group_1_ingress_cidr" {
+    description = "Public Subnet 1 Ingress CIDR"  
+}
