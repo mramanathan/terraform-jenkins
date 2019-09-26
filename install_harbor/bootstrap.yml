@@ -1,0 +1,13 @@
+---
+  - name: bootstrap
+    hosts: localhost
+    connection: local
+    become: yes
+    user: ubuntu
+    pre_tasks:
+    post_tasks:
+    roles:
+      - { role: 'base' }
+      - { role: 'docker' }
+      - { role: 'docker-compose' }
+      - { role: 'harbor' }
