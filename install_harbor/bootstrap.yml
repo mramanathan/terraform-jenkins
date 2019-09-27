@@ -2,12 +2,17 @@
   - name: bootstrap
     hosts: localhost
     connection: local
-    become: yes
+    become: true
+    become_method: sudo
+    become_flags: -E
     user: ubuntu
     pre_tasks:
     post_tasks:
     roles:
       - { role: 'base' }
       - { role: 'docker' }
-      - { role: 'docker-compose' }
       - { role: 'harbor' }
+    vars:
+      docker_compose_version:
+      harbor_version:
+      ipv4_address: "{{ ansible_facts['eth0']['ipv4']['address'] }}"

@@ -26,7 +26,28 @@ resource "aws_security_group" "ec2_public_security_group" {
       protocol  = "tcp"
       cidr_blocks = ["${var.public_security_group_1_ingress_cidr}"]
   }
+  
+  ingress {
+      from_port = 80
+      to_port   = 80
+      protocol  = "tcp"
+      cidr_blocks = ["${var.public_security_group_1_ingress_cidr}"]
+  }
 
+  ingress {
+      from_port = 22
+      to_port   = 22
+      protocol  = "tcp"
+      cidr_blocks = ["${var.public_security_group_2_ingress_cidr}"]
+  }
+
+  ingress {
+      from_port = 80
+      to_port   = 80
+      protocol  = "tcp"
+      cidr_blocks = ["${var.public_security_group_2_ingress_cidr}"]
+  }
+  
   ingress {
       from_port = 22
       to_port   = 22

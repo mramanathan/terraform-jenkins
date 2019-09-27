@@ -15,3 +15,7 @@ variable "public_subnet_1_cidr" {
 variable "public_security_group_1_ingress_cidr" {
     description = "Public Subnet 1 Ingress CIDR"  
 }
+
+variable "public_security_group_2_ingress_cidr" {
+    description = "Public Subnet 2 Ingress CIDR"  
+}
