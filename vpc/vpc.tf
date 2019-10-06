@@ -1,5 +1,6 @@
 provider "aws" {
   region = "${var.region}"
+  version = "2.29"
 }
 
 terraform {
@@ -24,34 +25,34 @@ resource "aws_security_group" "ec2_public_security_group" {
       from_port = 22
       to_port   = 22
       protocol  = "tcp"
-      cidr_blocks = ["${var.public_security_group_1_ingress_cidr}"]
+      cidr_blocks = ["${var.public_security_group_ingress_1_cidr}"]
   }
   
   ingress {
-      from_port = 80
-      to_port   = 80
+      from_port = 1014
+      to_port   = 1014
       protocol  = "tcp"
-      cidr_blocks = ["${var.public_security_group_1_ingress_cidr}"]
+      cidr_blocks = ["${var.public_security_group_ingress_1_cidr}"]
   }
 
   ingress {
       from_port = 22
       to_port   = 22
       protocol  = "tcp"
-      cidr_blocks = ["${var.public_security_group_2_ingress_cidr}"]
-  }
-
-  ingress {
-      from_port = 80
-      to_port   = 80
-      protocol  = "tcp"
-      cidr_blocks = ["${var.public_security_group_2_ingress_cidr}"]
+      cidr_blocks = ["${var.public_security_group_ingress_2_cidr}"]
   }
   
   ingress {
-      from_port = 22
-      to_port   = 22
+      from_port = 1014
+      to_port   = 1014
       protocol  = "tcp"
+      cidr_blocks = ["${var.public_security_group_ingress_2_cidr}"]
+  }
+
+  ingress {
+      from_port = 0
+      to_port   = 0
+      protocol  = "-1"
       cidr_blocks = ["${var.vpc_cidr}"]
   }
 
@@ -67,13 +68,13 @@ resource "aws_security_group" "ec2_public_security_group" {
   }
 }
 
-resource "aws_subnet" "public-subnet-1" {
+resource "aws_subnet" "public-subnet" {
     vpc_id            = "${aws_vpc.production-vpc.id}"
-    cidr_block        = "${var.public_subnet_1_cidr}"
+    cidr_block        = "${var.public_subnet_cidr}"
     availability_zone = "ap-south-1a"
 
     tags = {
-        Name = "Public-Subnet-1"
+        Name = "Public-Subnet"
     }
 }
 
@@ -85,9 +86,9 @@ resource "aws_route_table" "public-route-table" {
     }
 }
 
-resource "aws_route_table_association" "public-subnet-1-association" {
+resource "aws_route_table_association" "public-subnet-association" {
     route_table_id = "${aws_route_table.public-route-table.id}"
-    subnet_id      = "${aws_subnet.public-subnet-1.id}"  
+    subnet_id      = "${aws_subnet.public-subnet.id}"  
 }
 
 resource "aws_internet_gateway" "production-igw" {
