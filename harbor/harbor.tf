@@ -3,6 +3,10 @@ provider "aws" {
     version = "2.29"
 }
 
+provider "template" {
+    version = "2.1"
+}
+
 terraform {
     backend "s3" {}
 }
@@ -39,6 +43,9 @@ resource "aws_volume_attachment" "harbor_ebs" {
     instance_id = "${aws_instance.harbor_instance.id}"
 }
 
+data "template_file" "user_data" {
+    template = "${file("${path.module}/templates/user-data.tpl")}"
+}
 
 resource "aws_instance" "harbor_instance" {
     ami                         = "${data.aws_ami.ubuntu.id}"
@@ -51,6 +58,8 @@ resource "aws_instance" "harbor_instance" {
     key_name                    = "${var.ec2_keypair_name}"
     
     iam_instance_profile        = "${var.ec2_iam_instance_profile}"
+    
+    user_data                   = "${data.template_file.user_data.rendered}"
 
     tags = {
         Name = "Harbor-docker-registry-helm-chart-repo"
