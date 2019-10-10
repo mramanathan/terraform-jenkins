@@ -41,16 +41,38 @@ modules=(
   jenkins
 )
 
+## module functions
+
 do_init() {
   echo ""
   ${TF} init ${BECONFIGS} "$@" 2>&1
   if [[ $? != 0 ]]; then do_error $? "init ${PWD##*/}"; fi
 }
 
+do_plan() {
+  echo ""
+  ${TF} plan ${TFVARS} -input=false \
+        --out=tfplan.out \
+        --detailed-exitcode 2>&1
+  if [[ $? != 0 ]]; then do_error $? "plan ${PWD##*/}"; fi
+}
+
 do_apply() {
   echo ""
-  ${TF} apply --input=false ${TFVARS} ${BECONFIGS} "$@" 2>&1
+  ${TF} apply -input=false ${TFVARS} --auto-approve 2>&1
   if [[ $? != 0 ]]; then do_error $? "apply ${PWD##*/}"; fi
+}
+
+do_clean() {
+  rm -f tfplan.out &&
+  rm -f terraform.tfstate.backup &&
+  rm -rf .terraform ||
+  return $?
+}
+
+do_destory_force() {
+  ${TF} destroy -force -input=false ${TFVARS} 2>&1
+  if [[ $? != 0 ]]; then do_error $? "destroy_force ${PWD##*/}"; fi
 }
 
 do_build() {
@@ -72,10 +94,10 @@ do_build_stack() {
   do
     echo "do_build_stack(): Building stack ${i}..."
     cd "${i}" && 
-    do_build "${i}" &&
-    cd ..
-    err=$?
-    if [[ ${err} -ne 0 ]]; then do_error "Error building stack ${i}"; fi
+      do_build "${i}" &&
+      cd ..
+      err=$?
+      if [[ ${err} -ne 0 ]]; then do_error ${err} "Error building the stack component ${i}"; fi
   done
   return ${err}
 }
@@ -87,40 +109,73 @@ do_build_stack() {
 # terraform.
 #######################
 do_clean_stack() {
-  echo ""
-  return $?
+  for i in "${modules[@]}"
+  do
+    echo "do_clean_stack(): Cleaning temporary data of the stack component ${i}..."
+    cd "${i}" && 
+      do_clean "${i}" &&
+      cd ..
+      err=$?
+      if [[ ${err} -ne 0 ]]; then do_error ${err} "Error building the stack component ${i}"; fi
+  done
+  return ${err}
 }
 
 #######################
 # 
-# Tear down the stack.
+# Tear down the stack
+# in the reverse order,
+# starting with the
+# instances, finally,
+# the network.
 #######################
 do_destroy_stack() {
-  echo ""
-  return $?
+  count=${#modules[*]}
+  for (( i=count-1; i>=0; i-- ))
+  do
+   echo "do_destory_stack(): Tear down the stack component, ${modules[i]}"
+   cd "${modules[i]}" &&
+   do_init &&
+     do_destory_force &&
+     cd ..
+     err=$?
+     if [[ ${err} -ne 0 ]]; then do_error ${err} "Error destroying the stack component ${i}"; fi
+  done
+  return ${err}
 }
 
 do_error() {
-  echo ""
-  return $?
+  rtval=$1
+  msg=$2
+  case ${rtval} in
+    0)
+      return
+      ;;
+    127)
+      echo "Error: Unknown SUBCOMMAND"
+      echo ""
+      do_help
+      return "${rtval}"
+      ;;
+    *)
+      echo "Error: ${msg}"
+      return "${rtval}"
+      ;;
+  esac
 }
 
 do_help() {
   echo -e "\nUsage: $0 [stack-subcommand]"
   echo -e "\nExamples: "
-  echo -e "\n$0 build_stack"
-  echo -e "\n$0 clean_stack"
-  echo -e "\n$0 destroy_stack"
+  echo -e "\n   $0 build_stack"
+  echo -e "\n   $0 clean_stack"
+  echo -e "\n   $0 destroy_stack"
   echo ""
-}
-
-do_show() {
-  echo -e "\nOutput the key info used to standup the tech stack"
 }
 
 homedir=$(pwd)
 SUBCOMMAND=$1
-shift
+shift 1
 
 if [[ -z ${SUBCOMMAND} ]]; then
   echo "Error: Need to specify SUBCOMMAND"
@@ -137,12 +192,7 @@ case ${SUBCOMMAND} in
     "" | "-h" | "--help")
         do_help
         ;;
-    "show")
-         do_show
-         exit 0
-         ;;
     *_stack)
-         #config_access
          "do_${SUBCOMMAND}" "$@" 2>/dev/null
          retv=$?
          cd "${homedir}" || exit 1
