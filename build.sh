@@ -3,6 +3,27 @@
 # TFHOME can be like, for example, /usr/local/bin
 TF=${TFHOME}/terraform
 
+check_tfver() {
+  PTRN="Terraform v"
+  MINVER="0.12.9"
+
+  printf "\nChecking the version of Terraform..\n"
+
+  TFVER=$(${TF} version | head -1)
+  CURVER="${TFVER##$PTRN}"
+
+  printf "\nFound Terraform version:%s ${CURVER}\n"
+
+  if [[ "${CURVER}" =~ "${MINVER}" ]]; then
+     printf "\nCurrent Terraform version matches with the minimum required version.\n"
+     echo " "
+  else
+    printf "\nError: Installed version of Terraform does not meet the required version, ${MINVER}"
+    echo " "
+    exit 1
+  fi
+}
+
 #######################
 # 
 # Check for Terraform
@@ -13,14 +34,15 @@ TF=${TFHOME}/terraform
 #######################
 if [ ! -x "${TF}" ]; then
   if [ "${TFHOME}" ]; then
-    echo "terraform not found. TFHOME is ${TFHOME}"
+    echo "Error: Terraform binary not found. TFHOME is ${TFHOME}"
     exit 1
   else
-    echo "TFHOME is not set."
+    echo "Error: TFHOME is not set in the path."
     exit 1
   fi
+else
+   check_tfver
 fi
-
 
 TFVARS=""
 TFVARS+="--var-file terraform.tfvars"
@@ -178,7 +200,7 @@ SUBCOMMAND=$1
 shift 1
 
 if [[ -z ${SUBCOMMAND} ]]; then
-  echo "Error: Need to specify SUBCOMMAND"
+  printf "\nError: Need to specify SUBCOMMAND"
   echo ""
   do_help
   exit 1
@@ -195,7 +217,7 @@ case ${SUBCOMMAND} in
     *_stack)
          "do_${SUBCOMMAND}" "$@" 2>/dev/null
          retv=$?
+         do_error ${retv} || exit $?
          cd "${homedir}" || exit 1
-         do_error ${retv}
          ;;
 esac
