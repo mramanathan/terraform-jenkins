@@ -29,8 +29,8 @@ resource "aws_security_group" "ec2_public_security_group" {
   }
   
   ingress {
-      from_port = 1014
-      to_port   = 1014
+      from_port = 1729
+      to_port   = 1729
       protocol  = "tcp"
       cidr_blocks = ["${var.public_security_group_ingress_1_cidr}"]
   }
@@ -43,8 +43,8 @@ resource "aws_security_group" "ec2_public_security_group" {
   }
   
   ingress {
-      from_port = 1014
-      to_port   = 1014
+      from_port = 1729
+      to_port   = 1729
       protocol  = "tcp"
       cidr_blocks = ["${var.public_security_group_ingress_2_cidr}"]
   }

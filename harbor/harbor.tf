@@ -29,7 +29,7 @@ data "aws_ami" "ubuntu" {
 
 resource "aws_ebs_volume" "harbor_storage" {
     availability_zone = "${aws_instance.harbor_instance.availability_zone}"
-    size = 8
+    size = 16
     type = "gp2"
 
     tags = { 
