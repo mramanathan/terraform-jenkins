@@ -27,27 +27,27 @@ data "aws_ami" "ubuntu" {
   owners = ["099720109477"] # Canonical
 }
 
-resource "aws_ebs_volume" "jenkins_storage" {
-    availability_zone = "${aws_instance.jenkins_instance.availability_zone}"
+resource "aws_ebs_volume" "jenkins_home_storage" {
+    availability_zone = "${aws_instance.jenkins_master.availability_zone}"
     size = 16
     type = "gp2"
 
     tags = { 
-        Name = "jenkins_storage"
+        Name = "jenkins_home"
     }
 }
 
 resource "aws_volume_attachment" "jenkins_ebs" {
     device_name = "/dev/sdf"
-    volume_id   = "${aws_ebs_volume.jenkins_storage.id}"
-    instance_id = "${aws_instance.jenkins_instance.id}"
+    volume_id   = "${aws_ebs_volume.jenkins_home_storage.id}"
+    instance_id = "${aws_instance.jenkins_master.id}"
 }
 
 data "template_file" "user_data" {
     template = "${file("${path.module}/templates/user-data.tpl")}"
 }
 
-resource "aws_instance" "jenkins_instance" {
+resource "aws_instance" "jenkins_master" {
     ami                         = "${data.aws_ami.ubuntu.id}"
     instance_type               = "${var.instance_type}"
 

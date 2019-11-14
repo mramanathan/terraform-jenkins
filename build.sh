@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
 # TFHOME can be like, for example, /usr/local/bin
 TF=${TFHOME}/terraform
