@@ -9,9 +9,18 @@ provider "template" {
     version = "2.1"
 }
 
+# ========== AWS ECR setup
+resource "aws_ecr_repository" "ecs_webserver_images" {
+  name = "${var.ecr_repository_name}"
+}
+
 # ========== Prep the EC2 with python and ansible
 data "template_file" "user_data" {
-    template = "${file("${path.module}/templates/user_data.tpl")}"
+    template = "${file("${module.path}"/user_data.tpl)}"
+    
+    vars {
+        ecs_cluster = "ecs_webserver"
+    }
 }
 
 # ========== security group: permit ssh traffic
@@ -66,15 +75,14 @@ resource "aws_launch_configuration" "ecs_launch_config" {
     security_groups = "${aws_security_group.ecs_webserver_sg.id}"
     user_data = "${data.template_file.user_data.rendered}"
     instance_type = "t2.micro"
+    associate_public_ip_address = "true"
+    key_name = "${var.sshkey}"
 
     root_block_device {
         volume_type = "standard"
         volume_size = 100
         delete_on_termination = true
     }
-
-    associate_public_ip_address = "false"
-    key_name = "${var.sshkey}"
 
     lifecycle {
         create_before_destroy = true
@@ -84,14 +92,6 @@ resource "aws_launch_configuration" "ecs_launch_config" {
 resource "aws_iam_instance_profile" "ecs_agent" {
   name = "ecs_agent"
   role = "${aws_iam_role.ecs_agent.name}"
-}
-
-data "template_file" "user_data" {
-    template = "${file("${module.path}"/user_data.tpl)}"
-    
-    vars {
-        ecs_cluster = "ecs_webserver"
-    }
 }
 
 resource "aws_autoscaling_group" "ecs_webserver_asg" {
