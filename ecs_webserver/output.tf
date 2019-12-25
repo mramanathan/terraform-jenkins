@@ -3,7 +3,7 @@ output "ecs_cluster_name" {
 }
 
 output "ecr_info" {
-    value = "{aws_ecr_repository.ecr_repository_name.repository_url}"
+    value = "${aws_ecr_repository.ecr_repository_name.repository_url}"
 }
 
 output "ec2_instance" {

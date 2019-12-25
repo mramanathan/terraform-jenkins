@@ -87,7 +87,7 @@ resource "aws_instance" "tf_ecs_instance" {
     security_groups = ["${aws_security_group.ecs_webserver_sg.id}"]
     user_data = <<EOF
                 #!/bin/bash
-                echo ECS_CLUSTER=${var.ecs_cluster_name}} >> /etc/ecs/ecs.config
+                echo ECS_CLUSTER=${var.ecs_cluster_name} >> /etc/ecs/ecs.config
                 EOF
     instance_type = "t2.micro"
     associate_public_ip_address = "true"
