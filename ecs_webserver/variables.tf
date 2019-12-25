@@ -18,7 +18,6 @@ variable "ecs_optimized_ami_id" {
   type = string
 }
 
-variable "ecr_repository_name" {
 variable "ecs_cluster_name" {
   type = string
 }

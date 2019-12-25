@@ -7,9 +7,9 @@ output "ecr_info" {
 }
 
 output "ec2_instance" {
-    value = "${aws_instance.tf_ec2_instance.*.id}"
+    value = "${aws_instance.tf_ecs_instance.*.id}"
 }
 
 output "ec2_instance_public_ip" {
-    value = "${aws_instance.tf_ec2_instance.*.public_ip}"
+    value = "${aws_instance.tf_ecs_instance.*.public_ip}"
 }

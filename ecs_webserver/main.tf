@@ -78,7 +78,7 @@ resource "aws_iam_instance_profile" "ecs-instance-profile" {
     }
 }
 
-resource "aws_instance" "default" {
+resource "aws_instance" "tf-ecs-instance" {
     count       = "${var.ec2_count}"
     # https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ecs-optimized_AMI.html
     ami = "${var.ecs_optimized_ami_id}"
