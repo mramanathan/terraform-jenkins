@@ -78,7 +78,7 @@ resource "aws_iam_instance_profile" "ecs-instance-profile" {
     }
 }
 
-resource "aws_instance" "tf-ecs-instance" {
+resource "aws_instance" "tf_ecs_instance" {
     count       = "${var.ec2_count}"
     # https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ecs-optimized_AMI.html
     ami = "${var.ecs_optimized_ami_id}"
@@ -93,14 +93,8 @@ resource "aws_instance" "tf-ecs-instance" {
     associate_public_ip_address = "true"
     key_name = "${var.sshkey}"
 
-    root_block_device {
-        volume_type = "standard"
-        volume_size = 24
-        delete_on_termination = true
-    }
-
     tags = {
-        Name = "tf-ec2-instance-${count.index}"
+        Name = "tf_ecs_instance_${count.index}"
     }
 }
 
