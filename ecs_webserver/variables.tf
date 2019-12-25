@@ -14,7 +14,7 @@ variable "ecs_cluster_name" {
   type = string
 }
 
-variable "ecs_repository_name" {
+variable "ecr_repository_name" {
   type = string
 }
 

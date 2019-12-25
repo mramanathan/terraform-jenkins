@@ -71,18 +71,20 @@ resource "aws_iam_role_policy_attachment" "ecs-instance-role-attachment" {
 resource "aws_iam_instance_profile" "ecs-instance-profile" {
     name = "ecs-instance-profile"
     path = "/"
-    roles = ["${aws_iam_role.ecs-instance-role.id}"]
+    role = "${aws_iam_role.ecs-instance-role.name}"
     provisioner "local-exec" {
       command = "sleep 10"
     }
 }
 
-resource "aws_launch_configuration" "ecs_launch_config" {
-    name_prefix = "tf-ecs-instance-"
+resource "aws_instance" "default" {
+    count       = "${var.ec2_count}"
+    name_prefix = "tf-ecs-instance-${count.index}"
     # https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ecs-optimized_AMI.html
     image_id = "ami-0310a9b646b817d26"
-    iam_instance_profile = "${aws.iam_instance_profile.ecs-instance-profile.id}"
-    security_groups = "${aws_security_group.ecs_webserver_sg.id}"
+    iam_instance_profile = "${aws_iam_instance_profile.ecs-instance-profile.id}"
+    subnet_id = "${var.subnet_id}"
+    security_groups = ["${aws_security_group.ecs_webserver_sg.id}"]
     user_data = <<EOF
                 #!/bin/bash
                 echo ECS_CLUSTER=${var.ecs_cluster_name}} >> /etc/ecs/ecs.config
@@ -93,12 +95,12 @@ resource "aws_launch_configuration" "ecs_launch_config" {
 
     root_block_device {
         volume_type = "standard"
-        volume_size = 100
+        volume_size = 24
         delete_on_termination = true
     }
 
-    lifecycle {
-        create_before_destroy = true
+    tags = {
+        Name = "tf-ec2-instance-${count.index}"
     }
 }
 
