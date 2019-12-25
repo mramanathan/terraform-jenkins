@@ -9,6 +9,7 @@ provider "template" {
     version = "2.1"
 }
 
+
 # ========== AWS ECR setup
 resource "aws_ecr_repository" "ecs_webserver_images" {
   name = "${var.ecr_repository_name}"
@@ -79,9 +80,8 @@ resource "aws_iam_instance_profile" "ecs-instance-profile" {
 
 resource "aws_instance" "default" {
     count       = "${var.ec2_count}"
-    name_prefix = "tf-ecs-instance-${count.index}"
     # https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ecs-optimized_AMI.html
-    image_id = "ami-0310a9b646b817d26"
+    ami = "${var.ecs_optimized_ami_id}"
     iam_instance_profile = "${aws_iam_instance_profile.ecs-instance-profile.id}"
     subnet_id = "${var.subnet_id}"
     security_groups = ["${aws_security_group.ecs_webserver_sg.id}"]
