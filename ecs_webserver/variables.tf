@@ -6,6 +6,18 @@ variable "vpc_id" {
   type = string
 }
 
+variable "subnet_id" {
+  type = string
+}
+
+variable "ecs_cluster_name" {
+  type = string
+}
+
+variable "ecs_repository_name" {
+  type = string
+}
+
 variable "sshkey" {
   type = string
 }
