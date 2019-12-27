@@ -11,7 +11,7 @@ provider "template" {
 
 
 # ========== AWS ECR setup
-resource "aws_ecr_repository" "ecs_webserver_images" {
+resource "aws_ecr_repository" "ecr_repository_name" {
   name = "${var.ecr_repository_name}"
 }
 

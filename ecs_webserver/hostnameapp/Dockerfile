@@ -1,4 +1,4 @@
-FROM nginx:alpine
+FROM nginx:latest
 
 # Accept from command line or from build env
 ARG VERSION
