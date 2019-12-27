@@ -78,23 +78,41 @@ resource "aws_iam_instance_profile" "ecs-instance-profile" {
     }
 }
 
-resource "aws_instance" "tf_ecs_instance" {
-    count       = "${var.ec2_count}"
+resource "aws_launch_configuration" "ecs_launch_config" {
+    name_prefix = "tf-ecs-launch-config-instance-"
     # https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ecs-optimized_AMI.html
-    ami = "${var.ecs_optimized_ami_id}"
-    iam_instance_profile = "${aws_iam_instance_profile.ecs-instance-profile.id}"
-    subnet_id = "${var.subnet_id}"
-    security_groups = ["${aws_security_group.ecs_webserver_sg.id}"]
+    image_id = "ami-0310a9b646b817d26"
+    iam_instance_profile = "${aws.iam_instance_profile.ecs_agent.name}"
+    security_groups = "${aws_security_group.ecs_webserver_sg.id}"
+    instance_type = "t2.micro"
+    associate_public_ip_address = "false"
+    key_name = "${var.sshkey}"
+
     user_data = <<EOF
                 #!/bin/bash
                 echo ECS_CLUSTER=${var.ecs_cluster_name} >> /etc/ecs/ecs.config
                 EOF
-    instance_type = "t2.micro"
-    associate_public_ip_address = "true"
-    key_name = "${var.sshkey}"
 
-    tags = {
-        Name = "tf_ecs_instance_${count.index}"
+    root_block_device {
+        volume_type = "standard"
+        volume_size = 100
+        delete_on_termination = true
+    }
+
+    lifecycle {
+        create_before_destroy = true
+    }
+}
+
+resource "aws_autoscaling_group" "ecs_webserver_asg" {
+    name = "ecs_webserver_asg"
+    launch_configuration = "${aws_launch_configuration.ecs_launch_config.name}"
+
+    min_size = 1
+    max_size = 2
+
+    lifecycle {
+        create_before_destroy = true
     }
 }
 

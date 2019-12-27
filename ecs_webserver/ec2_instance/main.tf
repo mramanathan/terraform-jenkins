@@ -10,12 +10,12 @@ provider "template" {
 }
 
 
-# ========== AWS ECR setup
+# ========== AWS ECR
 resource "aws_ecr_repository" "ecs_webserver_images" {
   name = "${var.ecr_repository_name}"
 }
 
-# ========== security group: permit ssh and web traffic
+# ========== ECS Security Group: Permit ssh and web traffic
 resource "aws_security_group" "ecs_webserver_sg" {
     name        = "ecs_webserver_sg"
     description = "Allow inbound and outbound traffic"
@@ -47,12 +47,16 @@ resource "aws_security_group" "ecs_webserver_sg" {
     }
 }
 
+##### IAM Roles, Policies
+
+# ========== IAM role meant to be assigned to the EC2 instance
 resource "aws_iam_role" "ecs-instance-role" {
     name                = "ecs-instance-role"
     path                = "/"
     assume_role_policy  = "${data.aws_iam_policy_document.ecs-instance-policy.json}"
 }
 
+# ========== Which managed service in AWS can assume 'ecs-instance-role'?
 data "aws_iam_policy_document" "ecs-instance-policy" {
     statement {
         actions = ["sts:AssumeRole"]
@@ -64,11 +68,13 @@ data "aws_iam_policy_document" "ecs-instance-policy" {
     }
 }
 
+# ========== Permissions for the 'ecs-instance-role'
 resource "aws_iam_role_policy_attachment" "ecs-instance-role-attachment" {
     role       = "${aws_iam_role.ecs-instance-role.name}"
     policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role"
 }
 
+# ========== EC2 instance profile can take up the 'ecs-instance-role' IAM role.
 resource "aws_iam_instance_profile" "ecs-instance-profile" {
     name = "ecs-instance-profile"
     path = "/"
@@ -78,48 +84,28 @@ resource "aws_iam_instance_profile" "ecs-instance-profile" {
     }
 }
 
-resource "aws_launch_configuration" "ecs_launch_config" {
-    name_prefix = "tf-ecs-launch-config-instance-"
+# ========== Spin up EC2 instances and make them join the cluster
+resource "aws_instance" "tf_ecs_instance" {
+    count       = "${var.ec2_count}"
     # https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ecs-optimized_AMI.html
-    image_id = "ami-0310a9b646b817d26"
-    iam_instance_profile = "${aws.iam_instance_profile.ecs_agent.name}"
-    security_groups = "${aws_security_group.ecs_webserver_sg.id}"
+    ami = "${var.ecs_optimized_ami_id}"
+    instance_type = "t2.micro"
+    associate_public_ip_address = "true"
+    key_name = "${var.sshkey}"
+    iam_instance_profile = "${aws_iam_instance_profile.ecs-instance-profile.id}"
+    subnet_id = "${var.subnet_id}"
+    security_groups = ["${aws_security_group.ecs_webserver_sg.id}"]
     user_data = <<EOF
                 #!/bin/bash
                 echo ECS_CLUSTER=${var.ecs_cluster_name} >> /etc/ecs/ecs.config
                 EOF
-    instance_type = "t2.micro"
 
-    root_block_device {
-        volume_type = "standard"
-        volume_size = 100
-        delete_on_termination = true
-    }
-
-    associate_public_ip_address = "false"
-    key_name = "${var.sshkey}"
-
-    lifecycle {
-        create_before_destroy = true
+    tags = {
+        Name = "tf_ecs_instance_${count.index}"
     }
 }
 
-resource "aws_autoscaling_group" "ecs_webserver_asg" {
-    name = "ecs_webserver_asg"
-    launch_configuration = "${aws_launch_configuration.ecs_launch_config.name}"
-
-    min_size = 1
-    max_size = 2
-
-    lifecycle {
-        create_before_destroy = true
-    }
-}
-
-resource "aws_ecs_cluster" "ecs_webserver" {
-  name = "ecs_webserver"
-}
-
+# ========== ECS cluster
 resource "aws_ecs_cluster" "ecs_cluster" {
   name = "${var.ecs_cluster_name}"
 }
