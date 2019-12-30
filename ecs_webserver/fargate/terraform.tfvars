@@ -1,5 +1,3 @@
 aws_region                     = ""
-subnet_id                      = ""
+subnet_ids                     = ""
 vpc_id                         = ""
-sshkey                         = ""
-ecs_optimized_ami_id           = ""

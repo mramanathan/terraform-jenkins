@@ -4,17 +4,6 @@ provider "aws" {
     version = "2.40.0"
 }
 
-# ========== Template provider
-provider "template" {
-    version = "2.1"
-}
-
-
-# ========== AWS ECR setup
-resource "aws_ecr_repository" "ecs_webserver_images" {
-  name = "${var.ecr_repository_name}"
-}
-
 # ========== security group: permit ssh and web traffic
 resource "aws_security_group" "ecs_webserver_sg" {
     name        = "ecs_webserver_sg"
@@ -25,18 +14,14 @@ resource "aws_security_group" "ecs_webserver_sg" {
         from_port = 22
         to_port   = 22
         protocol  = "tcp"
-        # in lieu of blanket access to ec2 instance, restrict just to ip address
-        # To get ip address of your system, use, curl ifconfig.co
-        cidr_blocks = ["${var.local_ip_address}/32"]
+        cidr_blocks = ["0.0.0.0/0"]
     }
 
     ingress {
         from_port = 80
         to_port   = 80
         protocol  = "tcp"
-        # in lieu of blanket access to ec2 instance, restrict just to ip address
-        # To get ip address of your system, use, curl ifconfig.co
-        cidr_blocks = ["${var.local_ip_address}/32"]
+        cidr_blocks = ["0.0.0.0/0"]
     }
 
     egress {
@@ -45,57 +30,111 @@ resource "aws_security_group" "ecs_webserver_sg" {
         protocol = "-1"
         cidr_blocks = ["0.0.0.0/0"]
     }
+
+    tags = {
+        Name = "ecs_webserver_sg_tf"
+    }
 }
 
-resource "aws_iam_role" "ecs-instance-role" {
-    name                = "ecs-instance-role"
+resource "aws_iam_role" "ecs_task_execution_role" {
+    name                = "ecs_task_execution_role"
     path                = "/"
-    assume_role_policy  = "${data.aws_iam_policy_document.ecs-instance-policy.json}"
+    assume_role_policy  = "${data.aws_iam_policy_document.ecs_task_execution_role_policy.json}"
 }
 
-data "aws_iam_policy_document" "ecs-instance-policy" {
+data "aws_iam_policy_document" "ecs_task_execution_role_policy" {
     statement {
         actions = ["sts:AssumeRole"]
 
         principals {
             type        = "Service"
-            identifiers = ["ec2.amazonaws.com"]
+            identifiers = ["ecs-tasks.amazonaws.com"]
         }
     }
 }
 
-resource "aws_iam_role_policy_attachment" "ecs-instance-role-attachment" {
-    role       = "${aws_iam_role.ecs-instance-role.name}"
-    policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role"
+resource "aws_iam_role_policy_attachment" "ecs_task_execution_role_attachment" {
+    role       = "${aws_iam_role.ecs_task_execution_role.name}"
+    policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
-resource "aws_iam_instance_profile" "ecs-instance-profile" {
-    name = "ecs-instance-profile"
-    path = "/"
-    role = "${aws_iam_role.ecs-instance-role.name}"
-    provisioner "local-exec" {
-      command = "sleep 10"
-    }
-}
-
-resource "aws_instance" "tf_ecs_instance" {
-    count       = "${var.ec2_count}"
-    # https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ecs-optimized_AMI.html
-    ami = "${var.ecs_optimized_ami_id}"
-    iam_instance_profile = "${aws_iam_instance_profile.ecs-instance-profile.id}"
-    subnet_id = "${var.subnet_id}"
-    security_groups = ["${aws_security_group.ecs_webserver_sg.id}"]
-    user_data = <<EOF
-                #!/bin/bash
-                echo ECS_CLUSTER=${var.ecs_cluster_name} >> /etc/ecs/ecs.config
-                EOF
-    instance_type = "t2.micro"
-    associate_public_ip_address = "true"
-    key_name = "${var.sshkey}"
+resource "aws_alb" "ecs_alb" {
+    name               = "ecs-alb-tf"
+    internal           = false
+    load_balancer_type = "application"
+    security_groups    = ["${aws_security_group.ecs_webserver_sg.id}"]
+    subnets            = split(",", "${var.subnet_ids}")
 
     tags = {
-        Name = "tf_ecs_instance_${count.index}"
+      Name = "ecs_alb_tf"
     }
+}
+
+resource "aws_lb_target_group" "ecs_alb_target_group" {
+    name               = "ecs-alb-target-group-tf"
+    port               = "80"
+    protocol           = "HTTP"
+    target_type        = "ip"
+    vpc_id             = "${var.vpc_id}"
+
+    health_check {
+        healthy_threshold   = "5"
+        unhealthy_threshold = "2"
+        interval            = "30"
+        matcher             = "200"
+        path                = "/"
+        port                = "traffic-port"
+        protocol            = "HTTP"
+        timeout             = "5"
+    }
+
+    tags = {
+      Name = "ecs_alb_target_group_tf"
+    }
+}
+
+resource "aws_lb_listener" "http" {
+    load_balancer_arn = "${aws_alb.ecs_alb.arn}"
+    port              = "80"
+    protocol          = "HTTP"
+
+    default_action {
+        type              = "forward"
+        target_group_arn  = "${aws_lb_target_group.ecs_alb_target_group.arn}"
+    }
+}
+
+resource "aws_ecs_task_definition" "hostname" {
+  family                   = "hostname-fargate-tf"
+  requires_compatibilities = ["FARGATE"]
+  network_mode             = "awsvpc"
+  cpu                      = "256"
+  memory                   = "512"
+  execution_role_arn       = "${aws_iam_role.ecs_task_execution_role.arn}"
+
+  container_definitions = <<DEFINITION
+[
+  {
+    "name": "${var.container_name}",
+    "family": "hostname-fargate-tf", 
+    "image": "${var.image_url}",
+    "essential": true,
+    "portMappings": [
+      {
+        "protocol": "tcp",
+        "containerPort": 80,
+        "hostPort": 80
+      }
+    ],
+    "requiresCompatibilities": [
+            "FARGATE"
+    ],
+    "memory": 500,
+    "cpu": 256,
+    "networkMode": "awsvpc"
+  }
+]
+DEFINITION
 }
 
 resource "aws_ecs_cluster" "ecs_cluster" {

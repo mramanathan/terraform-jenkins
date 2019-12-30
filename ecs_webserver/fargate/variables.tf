@@ -6,15 +6,8 @@ variable "vpc_id" {
   type = string
 }
 
-variable "subnet_id" {
-  type = string
-}
-
-variable "ec2_count" {
-  type = string
-}
-
-variable "ecs_optimized_ami_id" {
+# comma separated subnet id
+variable "subnet_ids" {
   type = string
 }
 
@@ -22,13 +15,10 @@ variable "ecs_cluster_name" {
   type = string
 }
 
-variable "ecr_repository_name" {
+variable "container_name" {
   type = string
 }
 
-variable "sshkey" {
+variable "image_url" {
   type = string
 }
-
-# set from TF_VAR_local_ipaddress that takes output of curl ifconfig.co
-variable "local_ip_address" {}
