@@ -1,0 +1,18 @@
+version: '3'
+services:
+    mysql:
+        environment:
+            MYSQL_DATABASE: mydb
+            MYSQL_ROOT_PASSWORD: qwerty
+        image: mysql:5.7
+        networks:
+            - testing_net
+    shell:
+        build:
+            context: .
+        networks:
+            - testing_net
+        stdin_open: true
+        tty: true
+networks:
+    testing_net:

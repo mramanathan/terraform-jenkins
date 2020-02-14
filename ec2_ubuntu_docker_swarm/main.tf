@@ -53,6 +53,16 @@ resource "aws_security_group" "allow_all" {
         cidr_blocks = ["0.0.0.0/0"]
     }
 
+    # SSH connectivity
+    ingress {
+        from_port = 22
+        to_port   = 22
+        protocol  = "tcp"
+        # in lieu of blanket access to ec2 instance, restrict just to ip address
+        # To get ip address of your system, use, curl ifconfig.co
+        cidr_blocks = ["0.0.0.0/0"]
+    }
+
     # ICMP for ping
     ingress {
         from_port = -1
