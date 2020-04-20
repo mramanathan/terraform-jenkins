@@ -30,4 +30,16 @@ sudo apt-get install -y ansible
 echo -e "\n[$(date "+%Y/%m/%d %H:%M:%S")]: Ansible version installed..."
 ansible --version | head -1
 
+# Install Python pip
+echo -e "\n[$(date "+%Y/%m/%d %H:%M:%S")]: Sleeping for 30 seconds..."
+sleep 30
+echo -e "\n[$(date "+%Y/%m/%d %H:%M:%S")]: Installing Python pip..."
+sudo apt-get install -y python-pip
+
+# Install docker-compose
+echo -e "\n[$(date "+%Y/%m/%d %H:%M:%S")]: Sleeping for 30 seconds..."
+sleep 30
+echo -e "\n[$(date "+%Y/%m/%d %H:%M:%S")]: Installing docker compose..."
+sudo -H pip install docker-compose
+
 echo -e "\n[$(date "+%Y/%m/%d %H:%M:%S")]: END user data script"
